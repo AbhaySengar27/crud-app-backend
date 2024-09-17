@@ -30,14 +30,22 @@ db.connect((err) => {
 // Create a new user (POST)
 app.post('/api/users', (req, res) => {
     const { name, email, age } = req.body;
+
+    // Make sure to validate that all fields are present
+    if (!name || !email || !age) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+
     const sqlInsert = 'INSERT INTO users (name, email, age) VALUES (?, ?, ?)';
     db.query(sqlInsert, [name, email, age], (err, result) => {
         if (err) {
-            return res.status(500).send(err);
+            console.error('Error inserting user:', err);  // Log the actual error
+            return res.status(500).json({ message: 'Server error', error: err });
         }
-        res.status(200).json({ message: 'User added successfully', userId: result.insertId });
+        res.status(200).json({ message: 'User added successfully' });
     });
 });
+
 
 // Read all users (GET)
 app.get('/api/users', (req, res) => {
