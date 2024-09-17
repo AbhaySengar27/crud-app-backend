@@ -12,10 +12,10 @@ app.use(bodyParser.json()); // For parsing application/json
 
 // MySQL Database connection
 const db = mysql.createConnection({
-    host: 'localhost',   // Your MySQL host (usually localhost)
-    user: 'root',        // Your MySQL username (change if necessary)
-    password: 'Abhsen123+', // Your MySQL password
-    database: 'test'  // Your MySQL database name
+    host: 'bdhzgmfvp8dzm0yxl3lq-mysql.services.clever-cloud.com',   // Your MySQL host (usually localhost)
+    user: 'uv9jrnp0b36lipeq',        // Your MySQL username (change if necessary)
+    password: 'bSyLBsxQEnkHjmQPKdqD', // Your MySQL password
+    database: 'bdhzgmfvp8dzm0yxl3lq'  // Your MySQL database name
 });
 
 // Connect to MySQL
