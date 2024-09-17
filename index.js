@@ -10,10 +10,10 @@ app.use(bodyParser.json());
 
 // Create a MySQL connection pool
 const pool = mysql.createPool({
-    host: process.env.DB_HOST,        // Use environment variables for security
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
+  host: 'bdhzgmfvp8dzm0yxl3lq-mysql.services.clever-cloud.com',   // Your MySQL host (usually localhost)
+    user: 'uv9jrnp0b36lipeq',        // Your MySQL username (change if necessary)
+    password: 'bSyLBsxQEnkHjmQPKdqD', // Your MySQL password
+    database: 'bdhzgmfvp8dzm0yxl3lq',  // Your MySQL database name
     waitForConnections: true,
     connectionLimit: 10,  // You can adjust the limit based on your app's requirements
     queueLimit: 0
