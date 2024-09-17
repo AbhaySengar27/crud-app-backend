@@ -3,96 +3,94 @@ const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
-// Initialize the app
 const app = express();
 
-// Middleware
 app.use(cors());
-app.use(bodyParser.json()); // For parsing application/json
+app.use(bodyParser.json());
 
-// MySQL Database connection
-const db = mysql.createConnection({
-    host: 'bdhzgmfvp8dzm0yxl3lq-mysql.services.clever-cloud.com',   // Your MySQL host (usually localhost)
-    user: 'uv9jrnp0b36lipeq',        // Your MySQL username (change if necessary)
-    password: 'bSyLBsxQEnkHjmQPKdqD', // Your MySQL password
-    database: 'bdhzgmfvp8dzm0yxl3lq'  // Your MySQL database name
+// Create a MySQL connection pool
+const pool = mysql.createPool({
+    host: process.env.DB_HOST,        // Use environment variables for security
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    waitForConnections: true,
+    connectionLimit: 10,  // You can adjust the limit based on your app's requirements
+    queueLimit: 0
 });
 
-// Connect to MySQL
-db.connect((err) => {
-    if (err) {
-        console.error('Error connecting to MySQL:', err);
-        return;
-    }
-    console.log('Connected to MySQL Database');
-});
+// Use promises for async/await with the pool
+const promisePool = pool.promise();
 
 // Create a new user (POST)
-app.post('/api/users', (req, res) => {
+app.post('/api/users', async (req, res) => {
     const { name, email, age } = req.body;
 
-    // Make sure to validate that all fields are present
     if (!name || !email || !age) {
-        return res.status(400).json({ message: 'All fields are required' });
+        return res.status(400).json({ message: 'All fields are required.' });
     }
 
-    const sqlInsert = 'INSERT INTO users (name, email, age) VALUES (?, ?, ?)';
-    db.query(sqlInsert, [name, email, age], (err, result) => {
-        if (err) {
-            console.error('Error inserting user:', err);  // Log the actual error
-            return res.status(500).json({ message: 'Server error', error: err });
-        }
-        res.status(200).json({ message: 'User added successfully' });
-    });
+    try {
+        const [result] = await promisePool.query('INSERT INTO users (name, email, age) VALUES (?, ?, ?)', [name, email, age]);
+        res.status(200).json({ message: 'User added successfully', userId: result.insertId });
+    } catch (err) {
+        console.error('Error inserting user:', err);
+        res.status(500).send('Server error');
+    }
 });
 
-
 // Read all users (GET)
-app.get('/api/users', (req, res) => {
-    const sqlSelect = 'SELECT * FROM users';
-    db.query(sqlSelect, (err, result) => {
-        if (err) {
-            return res.status(500).send(err);
-        }
-        res.status(200).json(result);
-    });
+app.get('/api/users', async (req, res) => {
+    try {
+        const [rows] = await promisePool.query('SELECT * FROM users');
+        res.status(200).json(rows);
+    } catch (err) {
+        console.error('Error fetching users:', err);
+        res.status(500).send('Server error');
+    }
 });
 
 // Update a user by ID (PUT)
-app.put('/api/users/:id', (req, res) => {
+app.put('/api/users/:id', async (req, res) => {
     const { id } = req.params;
     const { name, email, age } = req.body;
-    const sqlUpdate = 'UPDATE users SET name = ?, email = ?, age = ? WHERE id = ?';
-    db.query(sqlUpdate, [name, email, age, id], (err, result) => {
-        if (err) {
-            return res.status(500).send(err);
-        }
+
+    if (!name || !email || !age) {
+        return res.status(400).json({ message: 'All fields are required.' });
+    }
+
+    try {
+        const [result] = await promisePool.query('UPDATE users SET name = ?, email = ?, age = ? WHERE id = ?', [name, email, age, id]);
+
         if (result.affectedRows === 0) {
-            return res.status(404).send({ message: 'User not found' });
+            return res.status(404).json({ message: 'User not found' });
         }
         res.status(200).json({ message: 'User updated successfully' });
-    });
+    } catch (err) {
+        console.error('Error updating user:', err);
+        res.status(500).send('Server error');
+    }
 });
 
 // Delete a user by ID (DELETE)
-app.delete('/api/users/:id', (req, res) => {
+app.delete('/api/users/:id', async (req, res) => {
     const { id } = req.params;
-    const sqlDelete = 'DELETE FROM users WHERE id = ?';
-    db.query(sqlDelete, [id], (err, result) => {
-        if (err) {
-            return res.status(500).send(err);
-        }
+
+    try {
+        const [result] = await promisePool.query('DELETE FROM users WHERE id = ?', [id]);
+
         if (result.affectedRows === 0) {
-            return res.status(404).send({ message: 'User not found' });
+            return res.status(404).json({ message: 'User not found' });
         }
         res.status(200).json({ message: 'User deleted successfully' });
-    });
+    } catch (err) {
+        console.error('Error deleting user:', err);
+        res.status(500).send('Server error');
+    }
 });
 
-// Server listen on port 5000
-const PORT = process.env.PORT || 5000;  // Use the port Render provides or fallback to 5000 for local development
-
+// Use dynamic port from Render or default to 10000
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-
